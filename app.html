@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP List and Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #ipList {
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        #map {
+            margin-top: 20px;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>IP List and Map</h1>
+        <textarea id="jsonInput" placeholder="Paste your JSON here"></textarea>
+        <button onclick="processJSON()">Process JSON</button>
+        <div id="ipList"></div>
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        let map;
+
+        function processJSON() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            try {
+                const data = JSON.parse(jsonInput);
+                const ips = data.userList.map(item => item.userInfo).filter(ip => ip);
+                const uniqueIPs = [...new Set(ips)]; // Remove duplicate IPs
+                displayIPs(uniqueIPs);
+                displayMap(uniqueIPs);
+            } catch (e) {
+                alert('Invalid JSON');
+            }
+        }
+
+        function displayIPs(ips) {
+            const ipList = document.getElementById('ipList');
+            ipList.innerHTML = '<h2>IP List</h2>' + ips.join('<br>');
+        }
+
+        async function fetchIPDetails(ip) {
+            try {
+                // Use a proxy server to bypass CORS
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                const apiUrl = `https://ipapi.co/${ip}/json/`;
+
+                const response = await fetch(proxyUrl + apiUrl);
+                if (!response.ok) throw new Error('Failed to fetch IP details');
+                const data = await response.json();
+                if (data.latitude && data.longitude) return data;
+
+                // Fallback to ipinfo.io
+                const fallbackResponse = await fetch(`https://ipinfo.io/${ip}/json?token=4c0f8c262fc07c`);
+                if (!fallbackResponse.ok) throw new Error('Failed to fetch IP details');
+                const fallbackData = await fallbackResponse.json();
+                if (fallbackData.loc) {
+                    const [latitude, longitude] = fallbackData.loc.split(',');
+                    return { latitude, longitude, city: fallbackData.city, region: fallbackData.region, country_name: fallbackData.country };
+                }
+                return null;
+            } catch (error) {
+                console.error(`Error fetching details for IP ${ip}:`, error);
+                return null;
+            }
+        }
+
+        async function displayMap(ips) {
+            // Initialize the map if it doesn't exist
+            if (!map) {
+                map = L.map('map').setView([0, 0], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+            } else {
+                // Clear existing markers
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+            }
+
+            for (let i = 0; i < ips.length; i++) {
+                const ip = ips[i];
+                const data = await fetchIPDetails(ip);
+
+                if (data && data.latitude && data.longitude) {
+                    const marker = L.marker([data.latitude, data.longitude]).addTo(map);
+                    marker.bindPopup(`<b>IP:</b> ${ip}<br><b>Location:</b> ${data.city}, ${data.region}, ${data.country_name}`);
+                }
+
+                // Add a delay to avoid hitting rate limits (e.g., 2 seconds delay between requests)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+    </script>
+</body>
+</html>
