@@ -16,44 +16,14 @@ body {
     color: #fff;
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-}
-
-/* Main Container */
-.main-container {
-    display: flex;
-    width: 100%;
-    max-width: 1200px;
-    margin: 20px;
-    gap: 20px;
-}
-
-/* Left Side (Map and Controls) */
-.left-side {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* Right Side (IP Details) */
-.right-side {
-    flex: 1;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(15px);
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    max-height: 80vh;
-    overflow-y: auto;
 }
 
 /* Glassmorphism Container */
 .container {
-    width: 100%;
+    max-width: 800px;
+    width: 90%;
     background: rgba(0, 0, 0, 0.4); /* Semi-transparent dark background */
     backdrop-filter: blur(15px); /* Blur effect */
     border-radius: 20px;
@@ -133,6 +103,7 @@ button:active {
 
 /* Map Styling */
 #map {
+    margin-top: 20px;
     height: 400px;
     border-radius: 10px;
     overflow: hidden;
@@ -140,42 +111,10 @@ button:active {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* IP Details Table Styling */
-#ipDetailsTable {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#ipDetailsTable th,
-#ipDetailsTable td {
-    padding: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    text-align: left;
-}
-
-/* Mobile Toggle Button */
-#toggleDetailsButton {
-    display: none; /* Hidden by default */
-    margin: 10px auto;
-    width: 100%;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     h1 {
         font-size: 2rem;
-    }
-
-    .main-container {
-        flex-direction: column;
-    }
-
-    .right-side {
-        display: none; /* Hide IP details on mobile by default */
-    }
-
-    #toggleDetailsButton {
-        display: block; /* Show toggle button on mobile */
     }
 
     .container {
@@ -191,65 +130,59 @@ button:active {
 
 </head>
 <body>
-    <div class="main-container">
-        <!-- Left Side (Map and Controls) -->
-        <div class="left-side">
-            <div class="container">
-                <h1>IP List and Map</h1>
-                <textarea id="jsonInput" placeholder="Paste your JSON here"></textarea>
-                <button onclick="processJSON()">Process JSON</button>
-                <button onclick="fetchAndClear()">Clear and Fetch from Database</button>
-                <div id="ipList"></div>
-                <div id="map"></div>
-            </div>
-        </div>
-
-        <!-- Right Side (IP Details) -->
-        <div class="right-side" id="rightSide">
-            <h2>IP Details</h2>
-            <table id="ipDetailsTable">
-                <thead>
-                    <tr>
-                        <th>IP</th>
-                        <th>Country</th>
-                        <th>City</th>
-                        <th>Region</th>
-                        <th>ISP</th>
-                        <th>Org</th>
-                        <th>Latitude</th>
-                        <th>Longitude</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Rows will be populated here -->
-                </tbody>
-            </table>
-        </div>
+    <div class="container">
+        <h1>IP List and Map</h1>
+        <textarea id="jsonInput" placeholder="Paste your JSON here"></textarea>
+        <button onclick="processJSON()">Process JSON</button>
+        <button onclick="fetchAndClear()">Clear and Fetch from Database</button>
+        <div id="ipList"></div>
+        <div id="map"></div>
     </div>
-
-    <!-- Mobile Toggle Button -->
-    <button id="toggleDetailsButton" onclick="toggleDetails()">Show IP Details</button>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
         let map;
 
-        function processJSON() {
+        async function processJSON() {
             const jsonInput = document.getElementById('jsonInput').value;
             try {
                 const data = JSON.parse(jsonInput);
                 const ips = data.userList.map(item => item.userInfo).filter(ip => ip);
                 const uniqueIPs = [...new Set(ips)]; // Remove duplicate IPs
-                displayIPs(uniqueIPs);
+                await displayIPs(uniqueIPs);
                 displayMap(uniqueIPs);
             } catch (e) {
                 alert('Invalid JSON');
             }
         }
 
-        function displayIPs(ips) {
+        async function displayIPs(ips) {
             const ipList = document.getElementById('ipList');
-            ipList.innerHTML = '<h2>IP List</h2>' + ips.join('<br>');
+            let tableContent = '<h2>IP List</h2><table border="1"><tr><th>IP</th><th>Country</th><th>City</th><th>Region</th><th>ISP</th><th>Org</th><th>Latitude</th><th>Longitude</th></tr>';
+
+            for (let ip of ips) {
+                const details = await fetchIPDetails(ip);
+                if (details) {
+                    tableContent += `<tr>
+                        <td>${ip}</td>
+                        <td>${details.country_name}</td>
+                        <td>${details.city}</td>
+                        <td>${details.region}</td>
+                        <td>${details.org}</td>
+                        <td>${details.org}</td>
+                        <td>${details.latitude}</td>
+                        <td>${details.longitude}</td>
+                    </tr>`;
+                } else {
+                    tableContent += `<tr>
+                        <td>${ip}</td>
+                        <td colspan="7">No details available</td>
+                    </tr>`;
+                }
+            }
+
+            tableContent += '</table>';
+            ipList.innerHTML = tableContent;
         }
 
         async function fetchIPDetails(ip) {
@@ -260,16 +193,7 @@ button:active {
                 const data = await response.json();
                 if (data.loc) {
                     const [latitude, longitude] = data.loc.split(',');
-                    return { 
-                        ip: ip,
-                        country: data.country,
-                        city: data.city,
-                        region: data.region,
-                        isp: data.org,
-                        org: data.org,
-                        latitude: latitude,
-                        longitude: longitude
-                    };
+                    return { latitude, longitude, city: data.city, region: data.region, country_name: data.country, org: data.org };
                 }
                 return null;
             } catch (error) {
@@ -294,30 +218,13 @@ button:active {
                 });
             }
 
-            const tableBody = document.querySelector('#ipDetailsTable tbody');
-            tableBody.innerHTML = ''; // Clear existing rows
-
             for (let i = 0; i < ips.length; i++) {
                 const ip = ips[i];
                 const data = await fetchIPDetails(ip);
 
                 if (data && data.latitude && data.longitude) {
                     const marker = L.marker([data.latitude, data.longitude]).addTo(map);
-                    marker.bindPopup(`<b>IP:</b> ${ip}<br><b>Location:</b> ${data.city}, ${data.region}, ${data.country}`);
-
-                    // Add a row to the table
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${data.ip}</td>
-                        <td>${data.country}</td>
-                        <td>${data.city}</td>
-                        <td>${data.region}</td>
-                        <td>${data.isp}</td>
-                        <td>${data.org}</td>
-                        <td>${data.latitude}</td>
-                        <td>${data.longitude}</td>
-                    `;
-                    tableBody.appendChild(row);
+                    marker.bindPopup(`<b>IP:</b> ${ip}<br><b>Location:</b> ${data.city}, ${data.region}, ${data.country_name}`);
                 }
 
                 // Add a delay to avoid hitting rate limits (e.g., 2 seconds delay between requests)
@@ -346,19 +253,6 @@ button:active {
             } catch (error) {
                 console.error('Error fetching JSON from database:', error);
                 alert('Failed to fetch JSON from database');
-            }
-        }
-
-        // Toggle IP Details on Mobile
-        function toggleDetails() {
-            const rightSide = document.getElementById('rightSide');
-            const toggleButton = document.getElementById('toggleDetailsButton');
-            if (rightSide.style.display === 'none' || rightSide.style.display === '') {
-                rightSide.style.display = 'block';
-                toggleButton.textContent = 'Hide IP Details';
-            } else {
-                rightSide.style.display = 'none';
-                toggleButton.textContent = 'Show IP Details';
             }
         }
     </script>
