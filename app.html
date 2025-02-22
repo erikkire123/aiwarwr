@@ -6,115 +6,126 @@
     <title>Benji</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   
-    <style>
-        /* Modern Gradient Background */
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+  <style>
+      /* Modern Dark Gradient Background */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
-        /* Glassmorphism Container */
-        .container {
-            max-width: 800px;
-            width: 90%;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+/* Glassmorphism Container */
+.container {
+    max-width: 800px;
+    width: 90%;
+    background: rgba(0, 0, 0, 0.4); /* Semi-transparent dark background */
+    backdrop-filter: blur(15px); /* Blur effect */
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #fff;
-        }
+/* Heading Styling */
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
 
-        /* Textarea Styling */
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 20px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            color: #fff;
-            resize: none;
-        }
+/* Textarea Styling */
+textarea {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 20px;
+    padding: 15px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: #fff;
+    resize: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
 
-        textarea::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
+textarea::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
 
-        /* Button Styling */
-        button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin-right: 10px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+textarea:focus {
+    border-color: #ff4757; /* Crimson border on focus */
+    box-shadow: 0 0 10px rgba(255, 71, 87, 0.5); /* Crimson glow */
+    outline: none;
+}
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
+/* Button Styling */
+button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #ff4757 0%, #e84118 100%); /* Crimson gradient */
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-right: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
 
-        button:active {
-            transform: translateY(0);
-        }
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); /* Crimson shadow */
+}
 
-        /* IP List Styling */
-        #ipList {
-            margin-top: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+button:active {
+    transform: translateY(0);
+}
 
-        /* Map Styling */
-        #map {
-            margin-top: 20px;
-            height: 400px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+/* IP List Styling */
+#ipList {
+    margin-top: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.1); /* Semi-transparent white */
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
+/* Map Styling */
+#map {
+    margin-top: 20px;
+    height: 400px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
 
-            .container {
-                padding: 20px;
-            }
+/* Responsive Design */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
 
-            button {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-        }
+    .container {
+        padding: 20px;
+    }
+
+    button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
     </style>
 
 </head>
